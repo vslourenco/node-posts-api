@@ -3,12 +3,19 @@
   "version": "1.0.0",
   "main": "app.js",
   "license": "MIT",
+  "scripts": {
+    "start": "nodemon app.js",
+    "lint": "eslint controllers/** models/** routes/** util/** --fix"
+  },
   "dependencies": {
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "multer": "^1.4.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.4"
+    "nodemon": "^2.0.4",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-plugin-import": "2.21.2"
   }
 }
