@@ -119,3 +119,27 @@ exports.updatePost = (req, res, next) => {
       return next(error);
     });
 };
+
+exports.deletePost = (req, res, next) => {
+  const { postId } = req.params;
+  Post.findById(postId)
+    .then((post) => {
+      if (!post) {
+        const error = new Error('Could not find post!');
+        error.statusCode = 404;
+        throw error;
+      }
+      FileHelper.deleteFile(post.imageUrl);
+      return Post.findByIdAndDelete(postId);
+    })
+    .then(() => {
+      res.status(200).json({ message: 'Post deleted.' });
+    })
+    .catch((err) => {
+      const error = err;
+      if (!error.statusCode) {
+        error.statusCode = 500;
+      }
+      return next(error);
+    });
+};
