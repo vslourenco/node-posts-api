@@ -97,12 +97,8 @@ exports.updatePost = (req, res, next) => {
     error.statusCode = 422;
     throw error;
   }
-  const {
-    title, content,
-  } = req.body;
-  const {
-    postId,
-  } = req.params;
+  const { title, content } = req.body;
+  const { postId } = req.params;
   let imageUrl = req.body.image;
   if (req.file) {
     imageUrl = req.file.path;
@@ -117,6 +113,11 @@ exports.updatePost = (req, res, next) => {
       if (!postData) {
         const error = new Error('Could not find post!');
         error.statusCode = 404;
+        throw error;
+      }
+      if (postData.creator.toString() !== req.userId) {
+        const error = new Error('Not authorized.');
+        error.statusCode = 403;
         throw error;
       }
       if (imageUrl !== postData.imageUrl) {
@@ -149,12 +150,20 @@ exports.deletePost = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
+      if (post.creator.toString() !== req.userId) {
+        const error = new Error('Not authorized.');
+        error.statusCode = 403;
+        throw error;
+      }
       FileHelper.deleteFile(post.imageUrl);
       return Post.findByIdAndDelete(postId);
     })
-    .then(() => {
-      res.status(200).json({ message: 'Post deleted.' });
+    .then(() => User.findById(req.userId))
+    .then((user) => {
+      user.posts.pull(postId);
+      return user.save();
     })
+    .then(() => res.status(200).json({ message: 'Post deleted.' }))
     .catch((err) => {
       const error = err;
       if (!error.statusCode) {
