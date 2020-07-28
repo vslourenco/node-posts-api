@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator/check');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
 exports.signup = (req, res, next) => {
@@ -21,6 +22,44 @@ exports.signup = (req, res, next) => {
       // eslint-disable-next-line no-underscore-dangle
       userId: result._id,
     }))
+    .catch((err) => {
+      const error = err;
+      if (!error.statusCode) {
+        error.statusCode = 500;
+      }
+      return next(error);
+    });
+};
+
+exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  let loadedUser;
+  User.findOne({ email })
+    .then((user) => {
+      if (!user) {
+        const error = new Error('Invalid email or password!');
+        error.statusCode = 401;
+        throw error;
+      }
+      loadedUser = user;
+      return bcrypt.compare(password, user.password);
+    })
+    .then((isEqual) => {
+      if (!isEqual) {
+        const error = new Error('Invalid email or password!');
+        error.statusCode = 401;
+        throw error;
+      }
+      const token = jwt.sign({
+        // eslint-disable-next-line no-underscore-dangle
+        email: loadedUser.email, userId: loadedUser._id.toString(),
+      },
+      'nodefeedsupersecret',
+      { expiresIn: '1h' });
+
+      // eslint-disable-next-line no-underscore-dangle
+      return res.status(200).json({ token, userId: loadedUser._id.toString() });
+    })
     .catch((err) => {
       const error = err;
       if (!error.statusCode) {
